@@ -29,7 +29,7 @@
 #include <cstddef>
 
 #ifdef VOOKOO_SPIRV_SUPPORT
-  #include <unified1/spirv.hpp11>
+  #include <vulkan/spirv.hpp11>
 #endif
 
 #include <vulkan/vulkan.hpp>
@@ -308,14 +308,14 @@ public:
 
   /// Set the default layers and extensions.
   InstanceMaker &defaultLayers() {
-    layers_.push_back("VK_LAYER_LUNARG_standard_validation");
+//    layers_.push_back("VK_LAYER_KHRONOS_validation");
     instance_extensions_.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     #ifdef VKU_SURFACE
       instance_extensions_.push_back(VKU_SURFACE);
     #endif
     instance_extensions_.push_back("VK_KHR_surface");
 #if defined( __APPLE__ ) && defined(VK_EXT_METAL_SURFACE_EXTENSION_NAME)
-    instance_extensions_.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+//    instance_extensions_.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
 #endif //__APPLE__
     return *this;
   }
@@ -493,7 +493,7 @@ private:
 ///     RenderpassMaker rpm;
 ///     rpm.subpassBegin(vk::PipelineBindPoint::eGraphics);
 ///     rpm.subpassColorAttachment(vk::ImageLayout::eColorAttachmentOptimal);
-///
+///    
 ///     rpm.attachmentDescription(attachmentDesc);
 ///     rpm.subpassDependency(dependency);
 ///     s.renderPass_ = rpm.createUnique(device);
@@ -578,7 +578,7 @@ private:
   vk::AttachmentReference *getAttachmentReference() {
     return (s.num_refs < max_refs) ? &s.attachmentReferences[s.num_refs++] : nullptr;
   }
-
+  
   struct State {
     std::vector<vk::AttachmentDescription> attachmentDescriptions;
     std::vector<vk::SubpassDescription> subpassDescriptions;
@@ -599,13 +599,13 @@ public:
 
   /// Construct a shader module from a file
   ShaderModule(const vk::Device &device, const std::string &filename) {
-    auto file = std::ifstream(filename, std::ios::binary);
-    if (file.bad()) {
-      return;
-    }
-
-    file.seekg(0, std::ios::end);
-    int length = (int)file.tellg();
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+	bool exists = (bool)file;
+	
+	if (!exists || !file.is_open())
+		return;
+	
+    size_t length = (size_t)file.tellg();
 
     s.opcodes_.resize((size_t)(length / 4));
     file.seekg(0, std::ios::beg);
@@ -655,7 +655,7 @@ public:
   };
 
   /// Get a list of variables from the shader.
-  ///
+  /// 
   /// This exposes the Uniforms, inputs, outputs, push constants.
   /// See spv::StorageClass for more details.
   std::vector<Variable> getVariables() const {
@@ -705,7 +705,7 @@ public:
 #endif
 
   bool ok() const { return s.ok_; }
-  VkShaderModule module() const { return *s.module_; }
+  VkShaderModule module() { return *s.module_; }
 
   /// Write a C++ consumable dump of the shader.
   /// Todo: make this more idiomatic.
@@ -851,7 +851,7 @@ public:
   }
 
   /// Add a shader module to the pipeline.
-  void shader(vk::ShaderStageFlagBits stage, const vku::ShaderModule &shader,
+  void shader(vk::ShaderStageFlagBits stage, vku::ShaderModule &shader,
                  const char *entryPoint = "main") {
     vk::PipelineShaderStageCreateInfo info{};
     info.module = shader.module();
@@ -1450,7 +1450,7 @@ public:
   }
 
   /// Copy a subimage in a buffer to this image.
-  void copy(vk::CommandBuffer cb, vk::Buffer buffer, uint32_t mipLevel, uint32_t arrayLayer, uint32_t width, uint32_t height, uint32_t depth, uint32_t offset) {
+  void copy(vk::CommandBuffer cb, vk::Buffer buffer, uint32_t mipLevel, uint32_t arrayLayer, uint32_t width, uint32_t height, uint32_t depth, uint32_t offset) { 
     setLayout(cb, vk::ImageLayout::eTransferDstOptimal);
     vk::BufferImageCopy region{};
     region.bufferOffset = offset;
@@ -1473,9 +1473,9 @@ public:
       vk::Buffer buf = stagingBuffer.buffer();
       uint32_t offset = 0;
       for (uint32_t mipLevel = 0; mipLevel != s.info.mipLevels; ++mipLevel) {
-        auto width = mipScale(s.info.extent.width, mipLevel);
-        auto height = mipScale(s.info.extent.height, mipLevel);
-        auto depth = mipScale(s.info.extent.depth, mipLevel);
+        auto width = mipScale(s.info.extent.width, mipLevel); 
+        auto height = mipScale(s.info.extent.height, mipLevel); 
+        auto depth = mipScale(s.info.extent.depth, mipLevel); 
         for (uint32_t face = 0; face != s.info.arrayLayers; ++face) {
           copy(cb, buf, mipLevel, face, width, height, depth, offset);
           offset += ((bp.bytesPerBlock + 3) & ~3) * (width * height);
@@ -1809,7 +1809,7 @@ public:
       0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A
     };
 
-
+    
     if (memcmp(magic, header.identifier, sizeof(magic))) {
       return;
     }
@@ -1898,9 +1898,9 @@ public:
     vku::executeImmediately(device, commandPool, queue, [&](vk::CommandBuffer cb) {
       vk::Buffer buf = stagingBuffer.buffer();
       for (uint32_t mipLevel = 0; mipLevel != mipLevels(); ++mipLevel) {
-        auto width = this->width(mipLevel);
-        auto height = this->height(mipLevel);
-        auto depth = this->depth(mipLevel);
+        auto width = this->width(mipLevel); 
+        auto height = this->height(mipLevel); 
+        auto depth = this->depth(mipLevel); 
         for (uint32_t face = 0; face != faces(); ++face) {
           image.copy(cb, buf, mipLevel, face, width, height, depth, offset(mipLevel, 0, face));
         }
@@ -1908,7 +1908,7 @@ public:
       image.setLayout(cb, vk::ImageLayout::eShaderReadOnlyOptimal);
     });
   }
-
+  
 private:
   static void swap(uint32_t &value) {
     value = value >> 24 | (value & 0xff0000) >> 8 | (value & 0xff00) << 8 | value << 24;

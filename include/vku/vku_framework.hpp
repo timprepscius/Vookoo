@@ -47,7 +47,7 @@
 #include <cstddef>
 
 #include <vulkan/vulkan.hpp>
-#include <vku/vku.hpp>
+#include "vku.hpp"
 
 namespace vku {
 
@@ -429,7 +429,7 @@ public:
     for (int i = 0; i != staticDrawBuffers_.size(); ++i) {
       vk::CommandBuffer cb = *staticDrawBuffers_[i];
 
-      std::array<float, 4> clearColorValue{0.75f, 0.75f, 0.75f, 1};
+      std::array<float, 4> clearColorValue{0, 0, 0, 1};
       vk::ClearDepthStencilValue clearDepthValue{ 1.0f, 0 };
       std::array<vk::ClearValue, 2> clearColours{vk::ClearValue{clearColorValue}, clearDepthValue};
       vk::RenderPassBeginInfo rpbi;
@@ -461,12 +461,12 @@ public:
     vk::Semaphore ccSema = *commandCompleteSemaphore_;
     vk::Semaphore iaSema = *imageAcquireSemaphore_;
     vk::Semaphore psSema = *dynamicSemaphore_;
-    vk::CommandBuffer cb = *staticDrawBuffers_[imageIndex];
+//    vk::CommandBuffer cb = *staticDrawBuffers_[imageIndex];
     vk::CommandBuffer pscb = *dynamicDrawBuffers_[imageIndex];
 
-    vk::Fence cbFence = commandBufferFences_[imageIndex];
-    device.waitForFences(cbFence, 1, umax);
-    device.resetFences(cbFence);
+//    vk::Fence cbFence = commandBufferFences_[imageIndex];
+//    device.waitForFences(cbFence, 1, umax);
+//    device.resetFences(cbFence);
 
     std::array<float, 4> clearColorValue{0.75f, 0.75f, 0.75f, 1};
     vk::ClearDepthStencilValue clearDepthValue{ 1.0f, 0 };
@@ -489,14 +489,14 @@ public:
     submit.pSignalSemaphores = &psSema;
     graphicsQueue.submit(1, &submit, vk::Fence{});
 
-    submit.waitSemaphoreCount = 1;
-    submit.pWaitSemaphores = &psSema;
-    submit.pWaitDstStageMask = &waitStages;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &cb;
-    submit.signalSemaphoreCount = 1;
-    submit.pSignalSemaphores = &ccSema;
-    graphicsQueue.submit(1, &submit, cbFence);
+//    submit.waitSemaphoreCount = 1;
+//    submit.pWaitSemaphores = &psSema;
+//    submit.pWaitDstStageMask = &waitStages;
+//    submit.commandBufferCount = 1;
+//    submit.pCommandBuffers = &cb;
+//    submit.signalSemaphoreCount = 1;
+//    submit.pSignalSemaphores = &ccSema;
+//    graphicsQueue.submit(1, &submit, cbFence);
 
     vk::PresentInfoKHR presentInfo;
     vk::SwapchainKHR swapchain = *swapchain_;
